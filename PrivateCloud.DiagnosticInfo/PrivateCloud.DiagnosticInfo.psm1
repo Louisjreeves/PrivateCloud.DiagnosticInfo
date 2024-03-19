@@ -1970,7 +1970,7 @@ Write-host "Dell SDDC Version"
             }
                         $JobStatic += start-job -Name ClusterNodeSupportedVersion {
                 try {
-                    $o = Get-ClusterNodeSupportedVersion -Cluster $using:AccessNode
+                    $o = Get-ClusterNodeSupportedVersion
                     $o | Export-Clixml ($using:Path + "GetClusterNodeSupportedVersion.XML")
                 }
                 catch { Write-Warning "Unable to get Cluster Node Supported Version `nError=$($_.Exception.Message)"
