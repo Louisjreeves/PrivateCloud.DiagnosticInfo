@@ -1968,6 +1968,15 @@ Write-host "Dell SDDC Version"
                 catch { Write-Warning "Unable to get ClusterAffinityRule.  `nError=$($_.Exception.Message)"
     }
             }
+                        $JobStatic += start-job -Name ClusterNodeSupportedVersion {
+                try {
+                    $o = Get-ClusterNodeSupportedVersion -Cluster $using:AccessNode
+                    $o | Export-Clixml ($using:Path + "GetClusterNodeSupportedVersion.XML")
+                }
+                catch { Write-Warning "Unable to get Cluster Node Supported Version `nError=$($_.Exception.Message)"
+ }
+            }
+
       Show-Update "Start gather of Network ATC information..."
           $NetworkATC=$False
           $NetworkATC=try {(Get-WindowsFeature NetworkATC).installed} catch {$False}
