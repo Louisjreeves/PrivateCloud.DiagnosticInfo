@@ -3545,7 +3545,7 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
         $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
         If ($CluChkFile) {
             Copy-Item $CluChkFile -Destination "$NodeSystemRootPath\Cluster\Reports" -ToSession (New-PSSession -ComputerName $AccessNode)
-            Copy-Item $CluChkFile -Destination $Path
+            Copy-Item $CluChkFile -Destination "$Path\CluChk.html"
         }
     }
 
