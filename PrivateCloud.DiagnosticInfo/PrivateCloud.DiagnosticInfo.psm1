@@ -3533,7 +3533,7 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
         }
         Finally{
             $xtimer=0
-            Invoke-Command -ScriptBlock {$wc = New-Object System.Net.WebClient;$wc.UseDefaultCredentials = $true;Invoke-Expression ($wc.DownloadString($using:url).Replace('$runType = 0','$runType = 3').Replace('$SDDCInputFolder = ''''',"`$SDDCInputFolder='$using:Path'"))} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
+            Invoke-Command -ScriptBlock {Invoke-Expression('$module="RunCluChk";$repo="PowershellScripts"'+(new-object net.webclient).DownloadString('https://raw.githubusercontent.com/DellProSupportGse/source/main/cluchk.ps1').Replace('$runType = 0','$runType = 3').Replace('$SDDCInputFolder = ''''',"`$SDDCInputFolder='$using:Path'"));Invoke-RunCluChk} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
             Do {
                Sleep 2
                Get-Job | Receive-Job
