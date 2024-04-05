@@ -3525,21 +3525,13 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
 
     If ($RunCluChk) {
         Show-Update "Running CluChk" -ForegroundColor Green
-        $url = 'https://gsetools.blob.core.windows.net/cluchk/CluChk.ps1.remove?sv=2020-10-02&si=ReadAccess&sr=b&sig=BpFR0jPXaQUNNATR7%2FqNj7CXjNw9bJH8jmeX0melJxM%3D'
-        $start_time = Get-Date
-        Try{Invoke-WebRequest -Uri $url -UseDefaultCredentials
-        }
-        Catch{Write-Host "ERROR: Source location NOT accessible. Please try again later"-foregroundcolor Red
-        }
-        Finally{
             $xtimer=0
-            Invoke-Command -ScriptBlock {Invoke-Expression('$module="RunCluChk";$repo="PowershellScripts"'+(new-object net.webclient).DownloadString('https://raw.githubusercontent.com/DellProSupportGse/source/main/cluchk.ps1').Replace('$runType = 0','$runType = 3').Replace('$SDDCInputFolder = ''''',"`$SDDCInputFolder='$using:Path'"));Invoke-RunCluChk} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
+            Invoke-Command -ScriptBlock {Invoke-Expression('$module="RunCluChk";$repo="PowershellScripts"'+(new-object net.webclient).DownloadString('https://raw.githubusercontent.com/DellProSupportGse/source/main/cluchk.ps1'));Invoke-RunCluChk -SDDCInputFolder "$using:Path" -runType 3} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
             Do {
                Sleep 2
                Get-Job | Receive-Job
                $xtimer++
             } While ((Get-Job "RunCluChk").State -ne "Completed" -and $xtimer -lt 400)
-        }
         Get-Job | Remove-Job -Force
         $CluChkFile=gci "$(Split-Path $Path -parent)\CluChkreport*" -ErrorAction SilentlyContinue
         $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
