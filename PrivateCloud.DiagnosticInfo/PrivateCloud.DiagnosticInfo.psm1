@@ -1158,6 +1158,10 @@ Include a performance counter capture.
 Include Storage Reliability counters. This may incur a short but observable latency cost on the
 physical disks due to varying overhead in their internal handling of SMART queries.
 
+.PARAMETER RunCluChk
+Downloads and runs the latest Dell CluChk utility. It saves a copy in the report as well as the access
+nodes C:\Windows\Cluster\Reports folder.
+
 .PARAMETER SessionConfigurationName
 SessionConfigurationName to connect to other nodes in cluster.
 Null if default configuration is to be used.
@@ -1313,6 +1317,10 @@ function Get-SddcDiagnosticInfo
         [parameter(ParameterSetName="WriteC", Mandatory=$false)]
         [parameter(ParameterSetName="WriteN", Mandatory=$false)]
         [switch] $IncludeReliabilityCounters,
+
+        [parameter(ParameterSetName="WriteC", Mandatory=$false)]
+        [parameter(ParameterSetName="WriteN", Mandatory=$false)]
+        [switch] $RunCluChk,
 
         [parameter(ParameterSetName="WriteC", Mandatory=$false)]
         [parameter(ParameterSetName="WriteN", Mandatory=$false)]
@@ -1960,6 +1968,15 @@ Write-host "Dell SDDC Version"
                 catch { Write-Warning "Unable to get ClusterAffinityRule.  `nError=$($_.Exception.Message)"
     }
             }
+                        $JobStatic += start-job -Name ClusterNodeSupportedVersion {
+                try {
+                    $o = Get-ClusterNodeSupportedVersion
+                    $o | Export-Clixml ($using:Path + "GetClusterNodeSupportedVersion.XML")
+                }
+                catch { Write-Warning "Unable to get Cluster Node Supported Version `nError=$($_.Exception.Message)"
+ }
+            }
+
       Show-Update "Start gather of Network ATC information..."
           $NetworkATC=$False
           $NetworkATC=try {(Get-WindowsFeature NetworkATC).installed} catch {$False}
@@ -3504,6 +3521,24 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
         Show-SddcDiagnosticReport -Report Summary -ReportLevel Full $Path
     } finally {
         Stop-Transcript
+    }
+
+    If ($RunCluChk) {
+        Show-Update "Running CluChk" -ForegroundColor Green
+            $xtimer=0
+            Invoke-Command -ScriptBlock {Invoke-Expression('$module="RunCluChk";$repo="PowershellScripts"'+(new-object net.webclient).DownloadString('https://raw.githubusercontent.com/DellProSupportGse/source/main/cluchk.ps1'));Invoke-RunCluChk -SDDCInputFolder "$using:Path" -runType 3} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
+            Do {
+               Sleep 2
+               Get-Job | Receive-Job
+               $xtimer++
+            } While ((Get-Job "RunCluChk").State -ne "Completed" -and $xtimer -lt 400)
+        Get-Job | Remove-Job -Force
+        $CluChkFile=gci "$(Split-Path $Path -parent)\CluChkreport*" -ErrorAction SilentlyContinue
+        $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
+        If ($CluChkFile) {
+            Copy-Item $CluChkFile -Destination "$NodeSystemRootPath\Cluster\Reports" -ToSession (New-PSSession -ComputerName $AccessNode)
+            Copy-Item $CluChkFile -Destination "$Path\CluChk.html"
+        }
     }
 
     #
