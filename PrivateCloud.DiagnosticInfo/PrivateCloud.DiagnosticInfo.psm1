@@ -3525,6 +3525,8 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
 
     If ($RunCluChk) {
         Show-Update "Running CluChk" -ForegroundColor Green
+        #Added job clean up
+        If(Get-Job -Name "RunCluChk" -ErrorAction SilentlyContinue ){Stop-Job -Name "RunCluChk" -ErrorAction SilentlyContinue ;Remove-Job -Name "RunCluChk" -Force}
             $xtimer=0
             Invoke-Command -ScriptBlock {Invoke-Expression('$module="RunCluChk";$repo="PowershellScripts"'+(new-object net.webclient).DownloadString('https://raw.githubusercontent.com/DellProSupportGse/source/main/cluchk.ps1'));Invoke-RunCluChk -SDDCInputFolder "$using:Path" -runType 3} -AsJob -ComputerName (hostname) -JobName "RunCluChk"
             Do {
@@ -3532,7 +3534,7 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
                Get-Job | Receive-Job
                $xtimer++
             } While ((Get-Job "RunCluChk").State -ne "Completed" -and $xtimer -lt 400)
-        Get-Job | Remove-Job -Force
+        Get-Job "RunCluChk" | Remove-Job "RunCluChk" -Force
         $CluChkFile=gci "$(Split-Path $Path -parent)\CluChkreport*" -ErrorAction SilentlyContinue
         $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
         If ($CluChkFile) {
