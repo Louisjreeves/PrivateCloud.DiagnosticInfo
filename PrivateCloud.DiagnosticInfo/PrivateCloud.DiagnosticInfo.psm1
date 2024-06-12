@@ -1564,7 +1564,7 @@ function Get-SddcDiagnosticInfo
             $SmbShares = Get-SmbShare -CimSession $AccessNode
             $Associations = Get-VirtualDisk -CimSession $AccessNode |% {
 
-                $o = $_ | Select-Object FriendlyName, CSVName, CSVNode, CSVPath, CSVVolume,
+                $o = $_ | Select-Object FriendlyName, CSVName, CSVNode, CSVPath, CSVFS,CSVVolume,
                 ShareName, SharePath, VolumeID, PoolName, VDResiliency, VDCopies, VDColumns, VDEAware
 
                 $AssocCSV = $_ | Get-ClusterSharedVolume -Cluster $ClusterName
@@ -1573,6 +1573,7 @@ function Get-SddcDiagnosticInfo
                     $o.CSVName = $AssocCSV.Name
                     $o.CSVNode = $AssocCSV.OwnerNode.Name
                     $o.CSVPath = $AssocCSV.SharedVolumeInfo.FriendlyVolumeName
+                    $o.CSVFS = ($_ | Get-Disk | Get-Partition | Get-Volume).FileSystemType
                     if ($o.CSVPath.Length -ne 0) {
                         $o.CSVVolume = $o.CSVPath.Split("\")[2]
                     }
@@ -3025,7 +3026,7 @@ $Output
 
                     }
 
-                    $o | Sort-Object RawIopsTotal -Descending | Select-Object -First 10 | Export-Clixml ($Path + "Noisyneighbor.xml")
+                    $o | Sort-Object RawIopsTotal -Descending | Select-Object -First 10 | Export-Clixml ($using:Path + "Noisyneighbor.xml")
                 }
                 catch { #Show-Warning("Unable to get Noisy neighbor Data.  `nError="+$_.Exception.Message) 
                         }
