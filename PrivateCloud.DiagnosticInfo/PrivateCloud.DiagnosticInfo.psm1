@@ -1564,7 +1564,7 @@ function Get-SddcDiagnosticInfo
             $SmbShares = Get-SmbShare -CimSession $AccessNode
             $Associations = Get-VirtualDisk -CimSession $AccessNode |% {
 
-                $o = $_ | Select-Object FriendlyName, CSVName, CSVNode, CSVPath, CSVVolume,
+                $o = $_ | Select-Object FriendlyName, CSVName, CSVNode, CSVPath, CSVFS,CSVVolume,
                 ShareName, SharePath, VolumeID, PoolName, VDResiliency, VDCopies, VDColumns, VDEAware
 
                 $AssocCSV = $_ | Get-ClusterSharedVolume -Cluster $ClusterName
@@ -1573,6 +1573,7 @@ function Get-SddcDiagnosticInfo
                     $o.CSVName = $AssocCSV.Name
                     $o.CSVNode = $AssocCSV.OwnerNode.Name
                     $o.CSVPath = $AssocCSV.SharedVolumeInfo.FriendlyVolumeName
+                    $o.CSVFS = ($_ | Get-Disk | Get-Partition | Get-Volume).FileSystemType
                     if ($o.CSVPath.Length -ne 0) {
                         $o.CSVVolume = $o.CSVPath.Split("\")[2]
                     }
@@ -2745,6 +2746,7 @@ $RepFiles |% {
 
         try {
             $VirtualDisk = Get-VirtualDisk -CimSession $AccessNode -StorageSubSystem $Subsystem
+            $VirtualDisk = $VirtualDisk | Select *,@{L="FileSystem";E={($_ | Get-Disk | Get-Partition | Get-Volume).FileSystemType}}
             $VirtualDisk | Export-Clixml ($Path + "GetVirtualDisk.XML")
         }
         catch { Show-Warning("Unable to get Virtual Disks.`nError="+$_.Exception.Message) }
@@ -3026,7 +3028,7 @@ $Output
 
                     }
 
-                    $o | Sort-Object RawIopsTotal -Descending | Select-Object -First 10 | Export-Clixml ($Path + "Noisyneighbor.xml")
+                    $o | Sort-Object RawIopsTotal -Descending | Select-Object -First 10 | Export-Clixml ($using:Path + "Noisyneighbor.xml")
                 }
                 catch { #Show-Warning("Unable to get Noisy neighbor Data.  `nError="+$_.Exception.Message) 
                         }
@@ -3535,7 +3537,7 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
                Get-Job | Receive-Job
                $xtimer++
             } While ((Get-Job "RunCluChk").State -ne "Completed" -and $xtimer -lt 400)
-        Get-Job "RunCluChk" | Remove-Job "RunCluChk" -Force
+        Get-Job "RunCluChk" | Remove-Job -Force
         $CluChkFile=gci "$(Split-Path $Path -parent)\CluChkreport*" -ErrorAction SilentlyContinue
         $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
         If ($CluChkFile) {
