@@ -2745,6 +2745,7 @@ $RepFiles |% {
 
         try {
             $VirtualDisk = Get-VirtualDisk -CimSession $AccessNode -StorageSubSystem $Subsystem
+            $VirtualDisk = $VirtualDisk | Select *,@{L="FileSystem";E={($_ | Get-Disk | Get-Partition | Get-Volume).FileSystemType}}
             $VirtualDisk | Export-Clixml ($Path + "GetVirtualDisk.XML")
         }
         catch { Show-Warning("Unable to get Virtual Disks.`nError="+$_.Exception.Message) }
