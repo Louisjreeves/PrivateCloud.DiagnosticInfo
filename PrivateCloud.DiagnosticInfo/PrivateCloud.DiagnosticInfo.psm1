@@ -3537,7 +3537,7 @@ Get-Counter -Counter ($using:set).Paths -SampleInterval 1 -MaxSamples $using:Per
                Get-Job | Receive-Job
                $xtimer++
             } While ((Get-Job "RunCluChk").State -ne "Completed" -and $xtimer -lt 400)
-        Get-Job "RunCluChk" | Remove-Job "RunCluChk" -Force
+        Get-Job "RunCluChk" | Remove-Job -Force
         $CluChkFile=gci "$(Split-Path $Path -parent)\CluChkreport*" -ErrorAction SilentlyContinue
         $NodeSystemRootPath = Invoke-Command -ComputerName $AccessNode -ConfigurationName $SessionConfigurationName { $env:SystemRoot }
         If ($CluChkFile) {
