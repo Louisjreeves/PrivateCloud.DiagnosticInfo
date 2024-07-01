@@ -2905,6 +2905,8 @@ Show-Update "Cluster Performance History"
                 #try {
                     #Show-Update "    Gathering Sample 1: CPU, I see you!"
                     #Ref: https://learn.microsoft.com/en-us/windows-server/storage/storage-spaces/performance-history-scripting#sample-1-cpu-i-see-you
+                    $Cluster = Get-cluster
+                    $ClusterNodes = Get-ClusterNode -Cluster $Cluster -ErrorAction SilentlyContinue
                     $Output =""
                     $Output = $ClusterNodes | ForEach-Object {
                         $_ | Get-ClusterPerf -ClusterNodeSeriesName "ClusterNode.Cpu.Usage" -TimeFrame "LastWeek"  -ErrorAction SilentlyContinue 
