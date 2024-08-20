@@ -2341,6 +2341,7 @@ $msinfo=Start-Process C:\Windows\System32\msinfo32.exe -ArgumentList  "/computer
 'Invoke-Command -ComputerName _C_ {Echo Get-NetFirewallRule;Get-NetFirewallRule -All}',
                 'Invoke-Command -ComputerName _C_ {Echo Get-ProcessByService;$aps=GPs;$r=@();$Ass=GWmi Win32_Service;foreach($p in $aps){$ss=$Ass|?{$_.ProcessID -eq $p.Id};IF($ss){$r+=[PSCustomObject]@{Service=$ss.DisplayName;ProcessName=$p.ProcessName;ProcessID=$p.Id}}}$r}',
                 'Get-NetNeighbor -CimSession _C_',
+                'Invoke-Command -ComputerName _C_ {Echo Get-CurrentVersion;Get-ItemProperty -Path HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion}',
 'Get-VMNetworkAdapterIsolation -ManagementOS -CimSession _C_'
                 #[System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]::GetComputerSite()
 
