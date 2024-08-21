@@ -2342,7 +2342,7 @@ $msinfo=Start-Process C:\Windows\System32\msinfo32.exe -ArgumentList  "/computer
                 'Invoke-Command -ComputerName _C_ {Echo Get-ProcessByService;$aps=GPs;$r=@();$Ass=GWmi Win32_Service;foreach($p in $aps){$ss=$Ass|?{$_.ProcessID -eq $p.Id};IF($ss){$r+=[PSCustomObject]@{Service=$ss.DisplayName;ProcessName=$p.ProcessName;ProcessID=$p.Id}}}$r}',
                 'Get-NetNeighbor -CimSession _C_',
                 'Invoke-Command -ComputerName _C_ {Echo Get-CurrentVersion;Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion"}',
-'Get-VMNetworkAdapterIsolation -ManagementOS -CimSession _C_'
+                'Get-VMNetworkAdapterIsolation -ManagementOS -CimSession _C_'
                 #[System.DirectoryServices.ActiveDirectory.ActiveDirectorySite]::GetComputerSite()
 
                 # These commands are specific to optional modules, add only if present
@@ -2375,6 +2375,11 @@ $CmdsToLog += "Get-DedupVolume -CimSession $clusterCimSession"
 If ((Get-WmiObject -Class Win32_OperatingSystem).Caption -imatch "HCI"){
 $CmdsToLog += "Get-AzureStackHCI"
 $CmdsToLog += "Get-AzureStackHCIArcIntegration"
+}
+#Added tun run commands that only exist on 23H2 and APEX nodes
+IF(Invoke-Command -ComputerName _C_ {IF(gcm Get-StampInformation -ErrorAction SilentlyContinue)}){
+  $CmdsToLog += 'Invoke-Command -ComputerName _C_ {Get-StampInformation}',
+                'Invoke-Command -ComputerName _C_ {Get-SolutionUpdate}'
 }
 
                 $nodejobs=@()
