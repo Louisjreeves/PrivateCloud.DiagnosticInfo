@@ -2377,9 +2377,11 @@ $CmdsToLog += "Get-AzureStackHCI"
 $CmdsToLog += "Get-AzureStackHCIArcIntegration"
 }
 #Added tun run commands that only exist on 23H2 and APEX nodes
-IF(Invoke-Command -ComputerName _C_ {IF(gcm Get-StampInformation -ErrorAction SilentlyContinue)}){
-  $CmdsToLog += 'Invoke-Command -ComputerName _C_ {Get-StampInformation}',
-                'Invoke-Command -ComputerName _C_ {Get-SolutionUpdate}'
+IF(gcm Get-StampInformation -ErrorAction SilentlyContinue){
+    Invoke-Command -ComputerName _C_ {
+      $CmdsToLog += 'Invoke-Command -ComputerName _C_ {Get-StampInformation}',
+                    'Invoke-Command -ComputerName _C_ {Get-SolutionUpdate}'
+    }
 }
 
                 $nodejobs=@()
