@@ -2380,8 +2380,12 @@ $CmdsToLog += "Get-AzureStackHCIArcIntegration"
 IF(Invoke-Command -ComputerName $using:NodeName {gcm Get-StampInformation -ErrorAction SilentlyContinue}){
       $CmdsToLog += 'Invoke-Command -ComputerName _C_ {Get-StampInformation}',
                     'Invoke-Command -ComputerName _C_ {Get-SolutionUpdate}'
+    if (test-path "C:\Observability\OEMDiagnostics") {
+      $LocalDiagsDir = Join-Path $LocalNodeDir "OEMDiagnostics"
+      $CmdsToLog += 'Invoke-Command -ComputerName _C_ {Get-ASEvent -Path (Get-ChildItem "C:\Observability\OEMDiagnostics\*.etl" | Select -Last 1).fullname}',
+                    'Invoke-Command -ComputerName _C_ {Start-MonitoringActionplanInstanceToComplete -actionPlanInstanceID (Get-ActionPlanInstances | ? Status -ne 'Completed' | Sort EndDateTime | Select -last 1).InstanceID}'
+    }
 }
-
                 $nodejobs=@()
                 foreach ($cmd in $CmdsToLog) {
 
@@ -2393,7 +2397,6 @@ IF(Invoke-Command -ComputerName $using:NodeName {gcm Get-StampInformation -Error
 $cmdsb = [scriptblock]::Create("$cmdex")
                         $nodejobs+=Start-Job -Name $LocalFile -ScriptBlock $cmdsb
                         #$out = Invoke-Expression $cmdex
-
                         # capture as txt and xml for quick analysis according to taste
                         #$out | ft -AutoSize | Out-File -Width 9999 -Encoding ascii -FilePath "$LocalFile.txt"
                         #$out | Export-Clixml -Path "$LocalFile.xml"
@@ -2461,9 +2464,18 @@ $cmdsb = [scriptblock]::Create("$cmdex")
                     $RPath = (Get-AdminSharePathFromLocal $using:NodeName "$NodeSystemRootPath\Cluster\Reports\*.*")
                     $RepFiles = Get-ChildItem -Path $RPath -Recurse -ErrorAction SilentlyContinue | Sort LastWriteTime}
                 catch { $RepFiles = ""; Show-Warning "Unable to get reports for node $using:NodeName" }
+                if (test-path "C:\Observability\OEMDiagnotics") { 
+                    try {
+                        $ASpath = (Get-AdminSharePathFromLocal $using:NodeName "$NodeSystemRootPath\Obersability\OEMDiagnotics\*.zip")
+                        $ASFiles = Get-ChildItem -Path $ASPath -Recurse -ErrorAction SilentlyContinue | Sort LastWriteTime}
+                    catch { $ASFiles = ""; Show-Warning "No zipped OEMDiagnotics available for $using:NodeName"}
+                }
 
                 $LocalReportDir = Join-Path $LocalNodeDir "ClusterReports"
                 md $LocalReportDir | Out-Null
+		md $LocalDiagsDir | Out-Null
+
+
 
                 Do {
                     Sleep 1
@@ -2496,6 +2508,10 @@ $RepFiles |% {
                     } 
                     
 
+                }
+$ASFiles |% {
+                        try { Copy-Item $_.FullName $LocalDiagsDir }
+                        catch { Show-Warning "Could not copy report file $($_.FullName)" }
                 }
                 While ($msinfo.HasExited -ne $True) {Sleep -Milliseconds 100}
 
