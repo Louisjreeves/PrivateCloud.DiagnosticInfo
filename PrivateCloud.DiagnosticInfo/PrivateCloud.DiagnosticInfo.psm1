@@ -2466,14 +2466,18 @@ $cmdsb = [scriptblock]::Create("$cmdex")
                 catch { $RepFiles = ""; Show-Warning "Unable to get reports for node $using:NodeName" }
                 if (test-path "C:\Observability\OEMDiagnotics") { 
                     try {
-                        $ASpath = (Get-AdminSharePathFromLocal $using:NodeName "$NodeSystemRootPath\Obersability\OEMDiagnotics\*.zip")
-                        $ASFiles = Get-ChildItem -Path $ASPath -Recurse -ErrorAction SilentlyContinue | Sort LastWriteTime}
-                    catch { $ASFiles = ""; Show-Warning "No zipped OEMDiagnotics available for $using:NodeName"}
+                        $ASFiles=@()
+                        $ASpath = (Get-AdminSharePathFromLocal $using:NodeName "$NodeSystemRootPath\Obersability\OEMDiagnotics")
+                        $FWpath = (Get-AdminSharePathFromLocal $using:NodeName "$NodeSystemRootPath\dell\logs\lcm")
+                        $ASFiles += Get-ChildItem -Path $ASPath -Filter "*.zip" -Recurse -ErrorAction SilentlyContinue | Sort LastWriteTime
+                        $ASFiles += Get-ChildItem -Path $FWPath -Recurse -ErrorAction SilentlyContinue | Sort LastWriteTime | Select -Last 10
+                        }
+                    catch { $ASFiles = ""; Show-Warning "No zipped OEMDiagnotics or FW Files available for $using:NodeName"}
                 }
 
                 $LocalReportDir = Join-Path $LocalNodeDir "ClusterReports"
                 md $LocalReportDir | Out-Null
-		md $LocalDiagsDir | Out-Null
+                md $LocalDiagsDir | Out-Null
 
 
 
