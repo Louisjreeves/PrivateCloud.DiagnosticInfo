@@ -2101,9 +2101,8 @@ Write-host "Dell SDDC Version"
                         $_ | Add-Member -MemberType NoteProperty -Name Company -Value "Unknown"
                     }
             }
-
-            $filters | Export-Clixml $LocalFileXml
             $LocalFileXml = Join-Path $env:temp "fltmc.xml"
+            $filters | Export-Clixml $LocalFileXml
             Write-Output (Get-AdminSharePathFromLocal $env:COMPUTERNAME $LocalFileXml)
             
 
