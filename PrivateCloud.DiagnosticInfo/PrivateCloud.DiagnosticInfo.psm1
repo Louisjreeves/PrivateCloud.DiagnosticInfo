@@ -2097,6 +2097,7 @@ Write-host "Dell SDDC Version"
                     $driverPath = "C:\Windows\System32\drivers\$($_.WindowsDriver)"
                     if (Test-Path $driverPath) {
                         $_ | Add-Member -MemberType NoteProperty -Name Company -Value (Get-ItemProperty $driverPath).VersionInfo.CompanyName
+                        $_ | Add-Member -MemberType NoteProperty -Name Description -Value (Get-ItemProperty $driverPath).VersionInfo.FileDescription
                     } else {
                         $_ | Add-Member -MemberType NoteProperty -Name Company -Value "Unknown"
                     }
