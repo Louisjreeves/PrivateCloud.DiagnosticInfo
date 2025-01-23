@@ -2079,6 +2079,33 @@ Write-host "Dell SDDC Version"
             $LocalFile = Join-Path $env:temp "fltmc.txt"
             fltmc > $LocalFile
             Write-Output (Get-AdminSharePathFromLocal $env:COMPUTERNAME $LocalFile)
+            # Run fltmc to get basic filter driver info
+                $filters = fltmc | ForEach-Object {
+                    $line = $_.Trim() -split "\s{2,}"
+                    if ($line.Length -ge 4 -and $line[0] -notmatch '^-+$' -and $line[0] -ne "Filter Name") {
+                        [PSCustomObject]@{
+                            FilterName    = $line[0]
+                            NumInstances  = $line[1]
+                            Altitude      = $line[2]
+                            Frame         = $line[3]
+                            WindowsDriver = $line[0] + ".sys"  # Assume the driver file matches FilterName
+                        }
+                    }
+                }
+            # Add Company/description information by checking driver properties
+                $filters | ForEach-Object {
+                    $driverPath = "C:\Windows\System32\drivers\$($_.WindowsDriver)"
+                    if (Test-Path $driverPath) {
+                        $_ | Add-Member -MemberType NoteProperty -Name Company -Value (Get-ItemProperty $driverPath).VersionInfo.CompanyName
+                        $_ | Add-Member -MemberType NoteProperty -Name Description -Value (Get-ItemProperty $driverPath).VersionInfo.FileDescription
+                    } else {
+                        $_ | Add-Member -MemberType NoteProperty -Name Company -Value "Unknown"
+                    }
+            }
+            $LocalFileXml = Join-Path $env:temp "fltmc.xml"
+            $filters | Export-Clixml $LocalFileXml
+            Write-Output (Get-AdminSharePathFromLocal $env:COMPUTERNAME $LocalFileXml)
+            
 
             $LocalFile = Join-Path $env:temp "fltmc-instances.txt"
             fltmc instances > $LocalFile
